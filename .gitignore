@@ -1,0 +1,3 @@
+*.pyc
+invisibleaus/settings_local.py
+invisibleaus/settings_prod.py
