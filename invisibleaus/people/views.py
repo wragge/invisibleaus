@@ -71,6 +71,7 @@ class PapertrailsListView(LinkedDataListView):
             graph.add((this_person, namespaces['rdfs']['label'], Literal(str(entity))))
         return graph
 
+"""
 
 class ResidentCreate(CreateView):
     form_class = AddResidentForm
@@ -234,3 +235,4 @@ class ResidentNameUpdate(UpdateView):
             context['namepart_formset'] = ResidentNamePartInlineFormset(instance=self.object)
         context.update(kwargs)
         return context
+"""
