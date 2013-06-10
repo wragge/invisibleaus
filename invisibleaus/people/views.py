@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 
 from invisibleaus.linkeddata.views import LinkedDataView, LinkedDataListView
-from invisibleaus.people.forms import *
+#from invisibleaus.people.forms import *
 from invisibleaus.sources.models import *
 
 from rstools.retrieve import RSSeriesClient, RSItemClient
