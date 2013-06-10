@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from django.contrib import admin
-from app.linkeddata.models import *
+from invisibleaus.linkeddata.models import *
 
 
 class RDFPropertyInline(admin.TabularInline):

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block page_title %}{% endblock %}Invisible Australians</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ STATIC_URL }}css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="{{ STATIC_URL }}css/local.css" rel="stylesheet">
+    <link href="{{ STATIC_URL }}/css/bootstrap-responsive.css" rel="stylesheet">
+    {% block extra_styles %}{% endblock %}
+  </head>
+  <body>
+    <div class="container">
+        <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="brand" href="/">Invisible Australians</a>
+                    <ul class="nav pull-right">
+                        {% if user.is_authenticated %}
+                        <li>
+                            <a href="#">Welcome {{ user.username }}!</a>
+                        </li>
+                        {% endif %}
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                Account
+                                <b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% if user.is_authenticated %}
+                                    <li><a href="{% url auth_logout %}">Logout</a></li>
+                                {% else %}
+                                    <li><a href="{% url auth_login %}">Login</a></li>
+                                {% endif %}
+                                <li><a href="{% url registration_register %}">Register</a></li>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% block content %}{% endblock %}
+    </div>
+    <script src="{{ STATIC_URL }}js/jquery-1.8.3.min.js"></script>
+    <script src="{{ STATIC_URL }}js/bootstrap.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+  </body>
+</html>

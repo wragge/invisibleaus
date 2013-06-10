@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.urlresolvers import reverse
+
 from invisibleaus.linkeddata.models import RDFRelationship, RDFType
 from invisibleaus.generic.models import Event, Period, Person, Group, StandardMetadata
 from invisibleaus.events.models import SeaVoyage, TravelEvent
@@ -8,20 +10,20 @@ from invisibleaus.events.models import SeaVoyage, TravelEvent
 
 class StandardSources(models.Model):
     records = models.ManyToManyField(
-                        'sources.Record',
-                        blank=True,
-                        null=True
-                        )
+        'sources.Record',
+        blank=True,
+        null=True
+    )
     photographs = models.ManyToManyField(
-                            'sources.Photograph',
-                            blank=True,
-                            null=True
-                            )
+        'sources.Photograph',
+        blank=True,
+        null=True
+    )
     publications = models.ManyToManyField(
-                            'sources.Publication',
-                            blank=True,
-                            null=True
-                            )
+        'sources.Publication',
+        blank=True,
+        null=True
+    )
 
     class Meta:
         abstract = True
@@ -29,17 +31,17 @@ class StandardSources(models.Model):
 
 class PersonPlaces(models.Model):
     birth_place = models.ForeignKey(
-                            'places.Place',
-                            blank=True,
-                            null=True,
-                            related_name='%(app_label)s_%(class)s_birth_place'
-                            )
+        'places.Place',
+        blank=True,
+        null=True,
+        related_name='%(app_label)s_%(class)s_birth_place'
+    )
     death_place = models.ForeignKey(
-                            'places.Place',
-                            blank=True,
-                            null=True,
-                            related_name='%(app_label)s_%(class)s_death_place'
-                            )
+        'places.Place',
+        blank=True,
+        null=True,
+        related_name='%(app_label)s_%(class)s_death_place'
+    )
 
     class Meta:
         abstract = True
@@ -47,13 +49,30 @@ class PersonPlaces(models.Model):
 
 class Resident(Person, PersonPlaces):
     '''Australian resident subject to WAP.'''
-    related_people = models.ManyToManyField(
-                                'people.Resident',
-                                blank=True,
-                                null=True,
-                                through='ResidentRelatedResident'
-                                )
+    related_residents = models.ManyToManyField(
+        'people.Resident',
+        blank=True,
+        null=True,
+        through='ResidentRelatedResident'
+    )
     papertrails = models.BooleanField(default=False)  # Part of Paper trails dataset.
+    related_records = models.ManyToManyField(
+        'sources.Record',
+        blank=True,
+        null=True,
+        through="ResidentRelatedRecord"
+    )
+
+    def naa_items(self):
+        return (
+            self.residentrelatedrecord_set
+                .filter(record__record_type__label='item')
+                .filter(record__repository__display_name='National Archives of Australia')
+                .order_by('relationship__label')
+        )
+
+    def get_absolute_url(self):
+        return reverse('resident-view', kwargs={'id': self.id})
 
 
 class Official(Person, PersonPlaces):
@@ -66,11 +85,38 @@ class Identity(models.Model):
     resident = models.ForeignKey('people.Resident', blank=True, null=True)
 
 
+class AltName(models.Model):
+    display_name = models.CharField(max_length=200)
+    note = models.TextField(blank=True, null=True)
+    name_type = models.ForeignKey('people.NameType', blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
 class NamePart(models.Model):
     '''Part of a name.'''
     part = models.CharField(max_length=100)
-    name_type = models.ForeignKey('people.NameType')
+    name_part_type = models.ForeignKey('people.NamePartType', blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
+class ResidentAltName(AltName):
+    resident = models.ForeignKey('people.Resident')
+
+
+class ResidentNamePart(NamePart):
+    alt_name = models.ForeignKey('people.ResidentAltName')
+
+
+class IdentityAltName(AltName):
     identity = models.ForeignKey('people.Identity')
+
+
+class IdentityNamePart(NamePart):
+    alt_name = models.ForeignKey('people.IdentityAltName')
 
 
 class Family(Group):
@@ -88,6 +134,36 @@ class Repository(Group):
 
 class Agency(Group):
     ''' Government organisation that creates records. '''
+    identifier = models.CharField(max_length=20, blank=True, null=True)
+    related_records = models.ManyToManyField('sources.Record', blank=True, null=True, through='AgencyRelatedRecord')
+    related_agencies = models.ManyToManyField('people.Agency', blank=True, null=True, through='AgencyRelatedAgency')
+
+
+class AgencyRelatedAgency(models.Model):
+    main_agency = models.ForeignKey('people.Agency', related_name='main_agency')
+    related_agency = models.ForeignKey('people.Agency', related_name='related_agency')
+    relationship = models.ForeignKey('people.AgencyRelationship')
+
+
+class AgencyRelatedRecord(models.Model):
+    record = models.ForeignKey('sources.Record')
+    agency = models.ForeignKey('people.Agency')
+    relationship = models.ForeignKey('people.AgencyRecordRelationship')
+    date_string = models.CharField(max_length=50, blank=True)  # Original text representation of dates
+    start_date = models.DateField(null=True, blank=True)
+    start_month_known = models.BooleanField(default=False)
+    start_day_known = models.BooleanField(default=False)
+    end_date = models.DateField(null=True, blank=True)
+    end_month_known = models.BooleanField(default=False)
+    end_day_known = models.BooleanField(default=False)
+
+
+class AgencyRecordRelationship(RDFRelationship):
+    ''' Eg. Creating, controlling. '''
+
+
+class AgencyRelationship(RDFRelationship):
+    ''' Eg. Superior, subsequent. '''
 
 
 class LifeEvent(Event, StandardSources):
@@ -102,6 +178,12 @@ class LifePeriod(Period, StandardSources):
     identity = models.ForeignKey('people.Identity')
     related_life_event = models.ManyToManyField('people.LifeEvent', blank=True, null=True, through='people.LifePeriodEvent')
     life_period_type = models.ForeignKey('people.LifePeriodType')
+
+
+class ResidentRelatedRecord(models.Model):
+    resident = models.ForeignKey('people.Resident')
+    record = models.ForeignKey('sources.Record')
+    relationship = models.ForeignKey('people.ResidentRecordRelationship')
 
 
 class ResidentRelatedResident(models.Model):
@@ -123,7 +205,11 @@ class LifePeriodEvent(models.Model):
 
 
 class NameType(RDFType):
-    '''Type of name, eg: family.'''
+    '''Type of name, eg: preferred, alias, Chinese.'''
+
+
+class NamePartType(RDFType):
+    '''Type of name part, eg: family.'''
 
 
 class LifeEventType(RDFType):
@@ -136,6 +222,10 @@ class LifePeriodType(RDFType):
 
 class ResidentRelationship(RDFRelationship):
     '''Relationship between people, eg: mother - child.'''
+
+
+class ResidentRecordRelationship(RDFRelationship):
+    '''Relationship between person and a file eg: primary topic, topic, mentioned.'''
 
 
 class LifePeriodEventRelationship(RDFRelationship):

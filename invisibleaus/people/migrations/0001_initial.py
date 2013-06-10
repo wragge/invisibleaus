@@ -65,14 +65,34 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('people', ['Identity'])
 
-        # Adding model 'NamePart'
-        db.create_table('people_namepart', (
+        # Adding model 'ResidentAltName'
+        db.create_table('people_residentaltname', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('display_name', self.gf('django.db.models.fields.CharField')(max_length=200)),
+            ('note', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('name_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.NameType'], null=True, blank=True)),
+            ('resident', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.Resident'])),
+        ))
+        db.send_create_signal('people', ['ResidentAltName'])
+
+        # Adding model 'ResidentNamePart'
+        db.create_table('people_residentnamepart', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('part', self.gf('django.db.models.fields.CharField')(max_length=100)),
-            ('name_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.NameType'])),
+            ('name_part_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.NamePartType'], null=True, blank=True)),
+            ('alt_name', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.ResidentAltName'])),
+        ))
+        db.send_create_signal('people', ['ResidentNamePart'])
+
+        # Adding model 'IdentityAltName'
+        db.create_table('people_identityaltname', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('display_name', self.gf('django.db.models.fields.CharField')(max_length=200)),
+            ('note', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('name_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.NameType'], null=True, blank=True)),
             ('identity', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.Identity'])),
         ))
-        db.send_create_signal('people', ['NamePart'])
+        db.send_create_signal('people', ['IdentityAltName'])
 
         # Adding model 'Family'
         db.create_table('people_family', (
@@ -128,8 +148,64 @@ class Migration(SchemaMigration):
             ('date_modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
             ('display_name', self.gf('django.db.models.fields.CharField')(max_length=200)),
             ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('identifier', self.gf('django.db.models.fields.CharField')(max_length=20, null=True, blank=True)),
         ))
         db.send_create_signal('people', ['Agency'])
+
+        # Adding model 'AgencyRelatedAgency'
+        db.create_table('people_agencyrelatedagency', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('main_agency', self.gf('django.db.models.fields.related.ForeignKey')(related_name='main_agency', to=orm['people.Agency'])),
+            ('related_agency', self.gf('django.db.models.fields.related.ForeignKey')(related_name='related_agency', to=orm['people.Agency'])),
+            ('relationship', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.AgencyRelationship'])),
+        ))
+        db.send_create_signal('people', ['AgencyRelatedAgency'])
+
+        # Adding model 'AgencyRelatedRecord'
+        db.create_table('people_agencyrelatedrecord', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('record', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['sources.Record'])),
+            ('agency', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.Agency'])),
+            ('relationship', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.AgencyRecordRelationship'])),
+            ('date_string', self.gf('django.db.models.fields.CharField')(max_length=50, blank=True)),
+            ('start_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
+            ('start_month_known', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('start_day_known', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('end_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
+            ('end_month_known', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('end_day_known', self.gf('django.db.models.fields.BooleanField')(default=False)),
+        ))
+        db.send_create_signal('people', ['AgencyRelatedRecord'])
+
+        # Adding model 'AgencyRecordRelationship'
+        db.create_table('people_agencyrecordrelationship', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
+        ))
+        db.send_create_signal('people', ['AgencyRecordRelationship'])
+
+        # Adding M2M table for field rdf_property on 'AgencyRecordRelationship'
+        db.create_table('people_agencyrecordrelationship_rdf_property', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('agencyrecordrelationship', models.ForeignKey(orm['people.agencyrecordrelationship'], null=False)),
+            ('rdfproperty', models.ForeignKey(orm['linkeddata.rdfproperty'], null=False))
+        ))
+        db.create_unique('people_agencyrecordrelationship_rdf_property', ['agencyrecordrelationship_id', 'rdfproperty_id'])
+
+        # Adding model 'AgencyRelationship'
+        db.create_table('people_agencyrelationship', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
+        ))
+        db.send_create_signal('people', ['AgencyRelationship'])
+
+        # Adding M2M table for field rdf_property on 'AgencyRelationship'
+        db.create_table('people_agencyrelationship_rdf_property', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('agencyrelationship', models.ForeignKey(orm['people.agencyrelationship'], null=False)),
+            ('rdfproperty', models.ForeignKey(orm['linkeddata.rdfproperty'], null=False))
+        ))
+        db.create_unique('people_agencyrelationship_rdf_property', ['agencyrelationship_id', 'rdfproperty_id'])
 
         # Adding model 'LifeEvent'
         db.create_table('people_lifeevent', (
@@ -227,6 +303,15 @@ class Migration(SchemaMigration):
         ))
         db.create_unique('people_lifeperiod_publications', ['lifeperiod_id', 'publication_id'])
 
+        # Adding model 'ResidentRelatedRecord'
+        db.create_table('people_residentrelatedrecord', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('resident', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.Resident'])),
+            ('record', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['sources.Record'])),
+            ('relationship', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['people.ResidentRecordRelationship'])),
+        ))
+        db.send_create_signal('people', ['ResidentRelatedRecord'])
+
         # Adding model 'ResidentRelatedResident'
         db.create_table('people_residentrelatedresident', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -256,39 +341,123 @@ class Migration(SchemaMigration):
 
         # Adding model 'NameType'
         db.create_table('people_nametype', (
-            ('rdftype_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['linkeddata.RDFType'], unique=True, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
         ))
         db.send_create_signal('people', ['NameType'])
 
+        # Adding M2M table for field rdf_class on 'NameType'
+        db.create_table('people_nametype_rdf_class', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('nametype', models.ForeignKey(orm['people.nametype'], null=False)),
+            ('rdfclass', models.ForeignKey(orm['linkeddata.rdfclass'], null=False))
+        ))
+        db.create_unique('people_nametype_rdf_class', ['nametype_id', 'rdfclass_id'])
+
+        # Adding model 'NamePartType'
+        db.create_table('people_nameparttype', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
+        ))
+        db.send_create_signal('people', ['NamePartType'])
+
+        # Adding M2M table for field rdf_class on 'NamePartType'
+        db.create_table('people_nameparttype_rdf_class', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('nameparttype', models.ForeignKey(orm['people.nameparttype'], null=False)),
+            ('rdfclass', models.ForeignKey(orm['linkeddata.rdfclass'], null=False))
+        ))
+        db.create_unique('people_nameparttype_rdf_class', ['nameparttype_id', 'rdfclass_id'])
+
         # Adding model 'LifeEventType'
         db.create_table('people_lifeeventtype', (
-            ('rdftype_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['linkeddata.RDFType'], unique=True, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
         ))
         db.send_create_signal('people', ['LifeEventType'])
 
+        # Adding M2M table for field rdf_class on 'LifeEventType'
+        db.create_table('people_lifeeventtype_rdf_class', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('lifeeventtype', models.ForeignKey(orm['people.lifeeventtype'], null=False)),
+            ('rdfclass', models.ForeignKey(orm['linkeddata.rdfclass'], null=False))
+        ))
+        db.create_unique('people_lifeeventtype_rdf_class', ['lifeeventtype_id', 'rdfclass_id'])
+
         # Adding model 'LifePeriodType'
         db.create_table('people_lifeperiodtype', (
-            ('rdftype_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['linkeddata.RDFType'], unique=True, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
         ))
         db.send_create_signal('people', ['LifePeriodType'])
 
+        # Adding M2M table for field rdf_class on 'LifePeriodType'
+        db.create_table('people_lifeperiodtype_rdf_class', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('lifeperiodtype', models.ForeignKey(orm['people.lifeperiodtype'], null=False)),
+            ('rdfclass', models.ForeignKey(orm['linkeddata.rdfclass'], null=False))
+        ))
+        db.create_unique('people_lifeperiodtype_rdf_class', ['lifeperiodtype_id', 'rdfclass_id'])
+
         # Adding model 'ResidentRelationship'
         db.create_table('people_residentrelationship', (
-            ('rdfrelationship_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['linkeddata.RDFRelationship'], unique=True, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
         ))
         db.send_create_signal('people', ['ResidentRelationship'])
 
+        # Adding M2M table for field rdf_property on 'ResidentRelationship'
+        db.create_table('people_residentrelationship_rdf_property', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('residentrelationship', models.ForeignKey(orm['people.residentrelationship'], null=False)),
+            ('rdfproperty', models.ForeignKey(orm['linkeddata.rdfproperty'], null=False))
+        ))
+        db.create_unique('people_residentrelationship_rdf_property', ['residentrelationship_id', 'rdfproperty_id'])
+
+        # Adding model 'ResidentRecordRelationship'
+        db.create_table('people_residentrecordrelationship', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
+        ))
+        db.send_create_signal('people', ['ResidentRecordRelationship'])
+
+        # Adding M2M table for field rdf_property on 'ResidentRecordRelationship'
+        db.create_table('people_residentrecordrelationship_rdf_property', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('residentrecordrelationship', models.ForeignKey(orm['people.residentrecordrelationship'], null=False)),
+            ('rdfproperty', models.ForeignKey(orm['linkeddata.rdfproperty'], null=False))
+        ))
+        db.create_unique('people_residentrecordrelationship_rdf_property', ['residentrecordrelationship_id', 'rdfproperty_id'])
+
         # Adding model 'LifePeriodEventRelationship'
         db.create_table('people_lifeperiodeventrelationship', (
-            ('rdfrelationship_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['linkeddata.RDFRelationship'], unique=True, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
         ))
         db.send_create_signal('people', ['LifePeriodEventRelationship'])
 
+        # Adding M2M table for field rdf_property on 'LifePeriodEventRelationship'
+        db.create_table('people_lifeperiodeventrelationship_rdf_property', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('lifeperiodeventrelationship', models.ForeignKey(orm['people.lifeperiodeventrelationship'], null=False)),
+            ('rdfproperty', models.ForeignKey(orm['linkeddata.rdfproperty'], null=False))
+        ))
+        db.create_unique('people_lifeperiodeventrelationship_rdf_property', ['lifeperiodeventrelationship_id', 'rdfproperty_id'])
+
         # Adding model 'LifeEventIdentityRelationship'
         db.create_table('people_lifeeventidentityrelationship', (
-            ('rdfrelationship_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['linkeddata.RDFRelationship'], unique=True, primary_key=True)),
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('label', self.gf('django.db.models.fields.CharField')(max_length=50)),
         ))
         db.send_create_signal('people', ['LifeEventIdentityRelationship'])
+
+        # Adding M2M table for field rdf_property on 'LifeEventIdentityRelationship'
+        db.create_table('people_lifeeventidentityrelationship_rdf_property', (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('lifeeventidentityrelationship', models.ForeignKey(orm['people.lifeeventidentityrelationship'], null=False)),
+            ('rdfproperty', models.ForeignKey(orm['linkeddata.rdfproperty'], null=False))
+        ))
+        db.create_unique('people_lifeeventidentityrelationship_rdf_property', ['lifeeventidentityrelationship_id', 'rdfproperty_id'])
 
 
     def backwards(self, orm):
@@ -301,8 +470,14 @@ class Migration(SchemaMigration):
         # Deleting model 'Identity'
         db.delete_table('people_identity')
 
-        # Deleting model 'NamePart'
-        db.delete_table('people_namepart')
+        # Deleting model 'ResidentAltName'
+        db.delete_table('people_residentaltname')
+
+        # Deleting model 'ResidentNamePart'
+        db.delete_table('people_residentnamepart')
+
+        # Deleting model 'IdentityAltName'
+        db.delete_table('people_identityaltname')
 
         # Deleting model 'Family'
         db.delete_table('people_family')
@@ -321,6 +496,24 @@ class Migration(SchemaMigration):
 
         # Deleting model 'Agency'
         db.delete_table('people_agency')
+
+        # Deleting model 'AgencyRelatedAgency'
+        db.delete_table('people_agencyrelatedagency')
+
+        # Deleting model 'AgencyRelatedRecord'
+        db.delete_table('people_agencyrelatedrecord')
+
+        # Deleting model 'AgencyRecordRelationship'
+        db.delete_table('people_agencyrecordrelationship')
+
+        # Removing M2M table for field rdf_property on 'AgencyRecordRelationship'
+        db.delete_table('people_agencyrecordrelationship_rdf_property')
+
+        # Deleting model 'AgencyRelationship'
+        db.delete_table('people_agencyrelationship')
+
+        # Removing M2M table for field rdf_property on 'AgencyRelationship'
+        db.delete_table('people_agencyrelationship_rdf_property')
 
         # Deleting model 'LifeEvent'
         db.delete_table('people_lifeevent')
@@ -346,6 +539,9 @@ class Migration(SchemaMigration):
         # Removing M2M table for field publications on 'LifePeriod'
         db.delete_table('people_lifeperiod_publications')
 
+        # Deleting model 'ResidentRelatedRecord'
+        db.delete_table('people_residentrelatedrecord')
+
         # Deleting model 'ResidentRelatedResident'
         db.delete_table('people_residentrelatedresident')
 
@@ -358,20 +554,50 @@ class Migration(SchemaMigration):
         # Deleting model 'NameType'
         db.delete_table('people_nametype')
 
+        # Removing M2M table for field rdf_class on 'NameType'
+        db.delete_table('people_nametype_rdf_class')
+
+        # Deleting model 'NamePartType'
+        db.delete_table('people_nameparttype')
+
+        # Removing M2M table for field rdf_class on 'NamePartType'
+        db.delete_table('people_nameparttype_rdf_class')
+
         # Deleting model 'LifeEventType'
         db.delete_table('people_lifeeventtype')
+
+        # Removing M2M table for field rdf_class on 'LifeEventType'
+        db.delete_table('people_lifeeventtype_rdf_class')
 
         # Deleting model 'LifePeriodType'
         db.delete_table('people_lifeperiodtype')
 
+        # Removing M2M table for field rdf_class on 'LifePeriodType'
+        db.delete_table('people_lifeperiodtype_rdf_class')
+
         # Deleting model 'ResidentRelationship'
         db.delete_table('people_residentrelationship')
+
+        # Removing M2M table for field rdf_property on 'ResidentRelationship'
+        db.delete_table('people_residentrelationship_rdf_property')
+
+        # Deleting model 'ResidentRecordRelationship'
+        db.delete_table('people_residentrecordrelationship')
+
+        # Removing M2M table for field rdf_property on 'ResidentRecordRelationship'
+        db.delete_table('people_residentrecordrelationship_rdf_property')
 
         # Deleting model 'LifePeriodEventRelationship'
         db.delete_table('people_lifeperiodeventrelationship')
 
+        # Removing M2M table for field rdf_property on 'LifePeriodEventRelationship'
+        db.delete_table('people_lifeperiodeventrelationship_rdf_property')
+
         # Deleting model 'LifeEventIdentityRelationship'
         db.delete_table('people_lifeeventidentityrelationship')
+
+        # Removing M2M table for field rdf_property on 'LifeEventIdentityRelationship'
+        db.delete_table('people_lifeeventidentityrelationship_rdf_property')
 
 
     models = {
@@ -411,23 +637,11 @@ class Migration(SchemaMigration):
             'rdf_property': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'schema': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['linkeddata.RDFSchema']"})
         },
-        'linkeddata.rdfrelationship': {
-            'Meta': {'object_name': 'RDFRelationship'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
-        },
         'linkeddata.rdfschema': {
             'Meta': {'object_name': 'RDFSchema'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'prefix': ('django.db.models.fields.CharField', [], {'max_length': '20'}),
             'uri': ('django.db.models.fields.CharField', [], {'max_length': '200'})
-        },
-        'linkeddata.rdftype': {
-            'Meta': {'object_name': 'RDFType'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'rdf_class': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFClass']", 'null': 'True', 'blank': 'True'})
         },
         'people.agency': {
             'Meta': {'object_name': 'Agency'},
@@ -435,7 +649,43 @@ class Migration(SchemaMigration):
             'date_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'display_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'identifier': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
+            'related_agencies': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['people.Agency']", 'null': 'True', 'through': "orm['people.AgencyRelatedAgency']", 'blank': 'True'}),
+            'related_records': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['sources.Record']", 'null': 'True', 'through': "orm['people.AgencyRelatedRecord']", 'blank': 'True'})
+        },
+        'people.agencyrecordrelationship': {
+            'Meta': {'object_name': 'AgencyRecordRelationship'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
+        },
+        'people.agencyrelatedagency': {
+            'Meta': {'object_name': 'AgencyRelatedAgency'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'main_agency': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'main_agency'", 'to': "orm['people.Agency']"}),
+            'related_agency': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'related_agency'", 'to': "orm['people.Agency']"}),
+            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.AgencyRelationship']"})
+        },
+        'people.agencyrelatedrecord': {
+            'Meta': {'object_name': 'AgencyRelatedRecord'},
+            'agency': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Agency']"}),
+            'date_string': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'}),
+            'end_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
+            'end_day_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'end_month_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'record': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.Record']"}),
+            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.AgencyRecordRelationship']"}),
+            'start_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
+            'start_day_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'start_month_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
+        },
+        'people.agencyrelationship': {
+            'Meta': {'object_name': 'AgencyRelationship'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
         },
         'people.family': {
             'Meta': {'object_name': 'Family'},
@@ -451,6 +701,14 @@ class Migration(SchemaMigration):
             'display_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'resident': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Resident']", 'null': 'True', 'blank': 'True'})
+        },
+        'people.identityaltname': {
+            'Meta': {'object_name': 'IdentityAltName'},
+            'display_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'identity': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Identity']"}),
+            'name_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.NameType']", 'null': 'True', 'blank': 'True'}),
+            'note': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
         'people.lifeevent': {
             'Meta': {'object_name': 'LifeEvent'},
@@ -486,12 +744,16 @@ class Migration(SchemaMigration):
             'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.LifeEventIdentityRelationship']"})
         },
         'people.lifeeventidentityrelationship': {
-            'Meta': {'object_name': 'LifeEventIdentityRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'LifeEventIdentityRelationship'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
         },
         'people.lifeeventtype': {
-            'Meta': {'object_name': 'LifeEventType', '_ormbases': ['linkeddata.RDFType']},
-            'rdftype_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFType']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'LifeEventType'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_class': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFClass']", 'null': 'True', 'blank': 'True'})
         },
         'people.lifeperiod': {
             'Meta': {'object_name': 'LifePeriod'},
@@ -527,23 +789,28 @@ class Migration(SchemaMigration):
             'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.LifePeriodEventRelationship']"})
         },
         'people.lifeperiodeventrelationship': {
-            'Meta': {'object_name': 'LifePeriodEventRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'LifePeriodEventRelationship'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
         },
         'people.lifeperiodtype': {
-            'Meta': {'object_name': 'LifePeriodType', '_ormbases': ['linkeddata.RDFType']},
-            'rdftype_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFType']", 'unique': 'True', 'primary_key': 'True'})
-        },
-        'people.namepart': {
-            'Meta': {'object_name': 'NamePart'},
+            'Meta': {'object_name': 'LifePeriodType'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'identity': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Identity']"}),
-            'name_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.NameType']"}),
-            'part': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_class': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFClass']", 'null': 'True', 'blank': 'True'})
+        },
+        'people.nameparttype': {
+            'Meta': {'object_name': 'NamePartType'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_class': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFClass']", 'null': 'True', 'blank': 'True'})
         },
         'people.nametype': {
-            'Meta': {'object_name': 'NameType', '_ormbases': ['linkeddata.RDFType']},
-            'rdftype_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFType']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'NameType'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_class': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFClass']", 'null': 'True', 'blank': 'True'})
         },
         'people.official': {
             'Meta': {'object_name': 'Official'},
@@ -597,7 +864,36 @@ class Migration(SchemaMigration):
             'display_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'papertrails': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'related_people': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['people.Resident']", 'null': 'True', 'through': "orm['people.ResidentRelatedResident']", 'blank': 'True'})
+            'related_records': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['sources.Record']", 'null': 'True', 'through': "orm['people.ResidentRelatedRecord']", 'blank': 'True'}),
+            'related_residents': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['people.Resident']", 'null': 'True', 'through': "orm['people.ResidentRelatedResident']", 'blank': 'True'})
+        },
+        'people.residentaltname': {
+            'Meta': {'object_name': 'ResidentAltName'},
+            'display_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.NameType']", 'null': 'True', 'blank': 'True'}),
+            'note': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'resident': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Resident']"})
+        },
+        'people.residentnamepart': {
+            'Meta': {'object_name': 'ResidentNamePart'},
+            'alt_name': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.ResidentAltName']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name_part_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.NamePartType']", 'null': 'True', 'blank': 'True'}),
+            'part': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+        },
+        'people.residentrecordrelationship': {
+            'Meta': {'object_name': 'ResidentRecordRelationship'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
+        },
+        'people.residentrelatedrecord': {
+            'Meta': {'object_name': 'ResidentRelatedRecord'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'record': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.Record']"}),
+            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.ResidentRecordRelationship']"}),
+            'resident': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Resident']"})
         },
         'people.residentrelatedresident': {
             'Meta': {'object_name': 'ResidentRelatedResident'},
@@ -607,8 +903,10 @@ class Migration(SchemaMigration):
             'resident': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'main_resident'", 'to': "orm['people.Resident']"})
         },
         'people.residentrelationship': {
-            'Meta': {'object_name': 'ResidentRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'ResidentRelationship'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
         },
         'people.seavoyagegroup': {
             'Meta': {'object_name': 'SeaVoyageGroup'},
@@ -639,34 +937,10 @@ class Migration(SchemaMigration):
             'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['places.PlaceRelationship']"})
         },
         'places.placerelationship': {
-            'Meta': {'object_name': 'PlaceRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
-        },
-        'sources.aggregationagencyrelationship': {
-            'Meta': {'object_name': 'AggregationAgencyRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
-        },
-        'sources.aggregationrelatedagency': {
-            'Meta': {'object_name': 'AggregationRelatedAgency'},
-            'agency': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Agency']"}),
-            'aggregation': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.RecordAggregation']"}),
+            'Meta': {'object_name': 'PlaceRelationship'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.AggregationAgencyRelationship']"})
-        },
-        'sources.aggregationrelatedaggregation': {
-            'Meta': {'object_name': 'AggregationRelatedAggregation'},
-            'aggregation': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'main_aggregation'", 'to': "orm['sources.RecordAggregation']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'related_aggregation': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'related_aggregation'", 'to': "orm['sources.RecordAggregation']"}),
-            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.AggregationRelationship']"})
-        },
-        'sources.aggregationrelationship': {
-            'Meta': {'object_name': 'AggregationRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
-        },
-        'sources.aggregationtype': {
-            'Meta': {'object_name': 'AggregationType', '_ormbases': ['linkeddata.RDFType']},
-            'rdftype_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFType']", 'unique': 'True', 'primary_key': 'True'})
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
         },
         'sources.photograph': {
             'Meta': {'object_name': 'Photograph'},
@@ -678,7 +952,7 @@ class Migration(SchemaMigration):
         },
         'sources.record': {
             'Meta': {'object_name': 'Record'},
-            'aggregation': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.RecordAggregation']", 'null': 'True', 'blank': 'True'}),
+            'access_status': ('django.db.models.fields.CharField', [], {'max_length': '30', 'null': 'True', 'blank': 'True'}),
             'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'date_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'date_string': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'}),
@@ -686,56 +960,41 @@ class Migration(SchemaMigration):
             'end_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'end_day_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'end_month_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'end_page': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'identifier': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'numeric_identifier': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'related_officials': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['people.Official']", 'through': "orm['sources.RecordRelatedOfficial']", 'symmetrical': 'False'}),
-            'related_residents': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['people.Resident']", 'through': "orm['sources.RecordRelatedResident']", 'symmetrical': 'False'}),
-            'start_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'start_day_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'start_month_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'title': ('django.db.models.fields.TextField', [], {})
-        },
-        'sources.recordaggregation': {
-            'Meta': {'object_name': 'RecordAggregation'},
-            'agencies': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['people.Agency']", 'null': 'True', 'through': "orm['sources.AggregationRelatedAgency']", 'blank': 'True'}),
-            'aggregation_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.AggregationType']"}),
-            'date_created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'date_modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'date_string': ('django.db.models.fields.CharField', [], {'max_length': '50', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'end_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'end_day_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'end_month_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'identifier': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'linear_size': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '8', 'decimal_places': '3', 'blank': 'True'}),
+            'is_part_of': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'part_of'", 'null': 'True', 'to': "orm['sources.Record']"}),
+            'long_citation': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'number_of_items': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'numeric_identifier': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'related_aggregations': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['sources.RecordAggregation']", 'null': 'True', 'through': "orm['sources.AggregationRelatedAggregation']", 'blank': 'True'}),
+            'record_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.RecordType']"}),
+            'related_records': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['sources.Record']", 'null': 'True', 'through': "orm['sources.RecordRelatedRecord']", 'blank': 'True'}),
             'repository': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Repository']", 'null': 'True', 'blank': 'True'}),
+            'short_citation': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'start_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'start_day_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'start_month_known': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'start_page': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'title': ('django.db.models.fields.TextField', [], {})
         },
-        'sources.recordpersonrelationship': {
-            'Meta': {'object_name': 'RecordPersonRelationship', '_ormbases': ['linkeddata.RDFRelationship']},
-            'rdfrelationship_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['linkeddata.RDFRelationship']", 'unique': 'True', 'primary_key': 'True'})
-        },
-        'sources.recordrelatedofficial': {
-            'Meta': {'object_name': 'RecordRelatedOfficial'},
+        'sources.recordrelatedrecord': {
+            'Meta': {'object_name': 'RecordRelatedRecord'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'record': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.Record']"}),
-            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.RecordPersonRelationship']"}),
-            'resident': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Official']"})
+            'record': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'main_record'", 'to': "orm['sources.Record']"}),
+            'related_record': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'related_record'", 'to': "orm['sources.Record']"}),
+            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.RecordRelationship']"})
         },
-        'sources.recordrelatedresident': {
-            'Meta': {'object_name': 'RecordRelatedResident'},
+        'sources.recordrelationship': {
+            'Meta': {'object_name': 'RecordRelationship'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'record': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.Record']"}),
-            'relationship': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['sources.RecordPersonRelationship']"}),
-            'resident': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['people.Resident']"})
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_property': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFProperty']", 'null': 'True', 'blank': 'True'})
+        },
+        'sources.recordtype': {
+            'Meta': {'object_name': 'RecordType'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'label': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'rdf_class': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['linkeddata.RDFClass']", 'null': 'True', 'blank': 'True'})
         },
         'things.ship': {
             'Meta': {'object_name': 'Ship'},

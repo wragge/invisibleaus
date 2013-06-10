@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Add a resident -- {% endblock %}
+{% block extra_scripts %}
+<script src="{{ STATIC_URL }}js/add-person.js"></script>
+{% endblock %}
+{% block extra_styles %}
+{% endblock %}
+{% block content %}
+<h2>Edit entry for {{ object.display_name }}</h2>
+    <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
+        {{ form.non_field_errors }}
+        <fieldset>
+            <h3>Names</h3>
+            <div class="form-field">
+                <label for="id_display_name">Formatted name for display:</label>
+                {% if form.display_name.errors %}
+                    <div class="alert alert-error">
+                        {{ form.display_name.errors }}
+                    </div>
+                {% endif %}
+                {{ form.display_name }}
+            </div>
+            <div class="form-field">
+                <h4>Name variations</h4>
+                <ul>
+                {% for alt_name in resident.residentaltname_set.all %}
+                    <li>
+                        {{ alt_name.display_name }} ({{ alt_name.name_type }})
+                        <a class="btn btn-mini" href="{% url resident-name-update alt_name.id %}">Update</a>
+                    </li>
+                {% endfor %}
+                </ul>
+
+                <p><a href="{% url resident-name-add resident.id %}" class="btn btn-primary">Add a name</a></p>
+            </div>
+        </fieldset>
+        <fieldset>
+            <h3>Birth</h3>
+            <div class="form-field">
+                <label for="id_birth_earliest_date">Birth date:</label>
+                {% if form.birth_earliest_date.errors %}
+                    <div class="alert alert-error">
+                        {{ form.birth_earliest_date.errors }}
+                    </div>
+                {% endif %}
+                {{ form.birth_earliest_date }}
+                {{ form.birth_earliest_date_month_known }}
+                {{ form.birth_earliest_date_day_known }}
+            </div>
+            <div class="form-field">
+                <label for="id_birth_latest_date_end">Latest possible birth date:</label>
+                {% if form.birth_latest_date.errors %}
+                    <div class="alert alert-error">
+                        {{ form.birth_latest_date.errors }}
+                    </div>
+                {% endif %}
+                {{ form.birth_latest_date }}
+                {{ form.birth_latest_date_month_known }}
+                {{ form.birth_latest_date_day_known }}
+            </div>
+            <div class="form-field date_type">
+                <label class="radio inline">
+                   <input type="radio" name="birth_date_type" checked="checked" value="single"> Single date
+                </label>
+                <label class="radio inline">
+                   <input type="radio" name="birth_date_type" value="range"> Date range
+                </label>
+            </div>
+        </fieldset>
+        <fieldset>
+            <h3>Death</h3>
+            <div class="form-field">
+                <label for="id_death_earliest_date">Date of death:</label>
+                {% if form.death_earliest_date.errors %}
+                    <div class="alert alert-error">
+                        {{ form.death_earliest_date.errors }}
+                    </div>
+                {% endif %}
+                {{ form.death_earliest_date }}
+                {{ form.death_earliest_date_month_known }}
+                {{ form.death_earliest_date_day_known }}
+            </div>
+            <div class="form-field">
+                <label for="id_death_latest_date_end">Latest possible death date:</label>
+                {% if form.death_latest_date.errors %}
+                    <div class="alert alert-error">
+                        {{ form.death_latest_date.errors }}
+                    </div>
+                {% endif %}
+                {{ form.death_latest_date }}
+                {{ form.death_latest_date_month_known }}
+                {{ form.death_latest_date_day_known }}
+            </div>
+            <div class="form-field date_type">
+                <label class="radio inline">
+                   <input type="radio" name="death_date_type" checked="checked" value="single"> Single date
+                </label>
+                <label class="radio inline">
+                   <input type="radio" name="death_date_type" value="range"> Date range
+                </label>
+            </div>
+        </fieldset>
+        <fieldset>
+        <h3>Sources</h3>
+        {% if resident.residentrelatedrecord_set %}
+            <h4>Related NAA items</h4>
+            <ul>
+                {% regroup resident.naa_items by relationship.label as relationships %}
+                {% for relationship in relationships %}
+                    <li>
+                        {{ relationship.grouper }}
+                        <ul>
+                        {% for item in relationship.list %}
+                            <li>
+                                NAA: {{ item.record.short_citation }} <a href="{% url record-update item.record.id %}" class="btn btn-mini">Edit</a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <div class="form-field">
+            <a href="{% url record-add-entity 'resident' resident.id %}" class="btn btn-primary">Add record</a>
+        </div>
+        </fieldset>
+        <fieldset>
+            <div class="form-field">
+                <label for="id_papertrails">Include in Paper Trails:</label>
+                {% if form.papertrails.errors %}
+                    <div class="alert alert-error">
+                        {{ form.papertrails.errors }}
+                    </div>
+                {% endif %}
+                {{ form.papertrails }}
+            </div>
+
+        </fieldset>
+        <div class="form-field">
+            <input class="btn btn-primary btn-large" type="submit" value="All done" />
+        </div>
+    </form>
+{% endblock %}

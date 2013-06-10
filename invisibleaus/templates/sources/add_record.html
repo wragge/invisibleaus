@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Add a resident -- {% endblock %}
+{% block extra_scripts %}
+<script src="{{ STATIC_URL }}js/add-record.js"></script>
+{% endblock %}
+{% block extra_styles %}
+{% endblock %}
+{% block content %}
+    <h2>Add a record</h2>
+    {% if form.errors %}
+<div id="form-error">
+    <p>The operation could not be performed because one or more error(s) occurred.<br />Please resubmit the form after making the following changes:</p>
+    <ul>
+    {% for field in form %}
+    <li>{{ field.label }} - {{ field.errors|striptags }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+    <form action="" method="post">{% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-field naa">
+            <label for="id_category">Record type:</label>
+            {% if form.category.errors %}
+                <div class="alert alert-error">
+                    {{ form.category.errors }}
+                </div>
+            {% endif %}
+            {{ form.category }}
+        </div>
+        <div class="form-field">
+            <label for="id_title">Title:</label>
+            {% if form.title.errors %}
+                <div class="alert alert-error">
+                    {{ form.title.errors }}
+                </div>
+            {% endif %}
+            {{ form.title }}
+        </div>
+        <div class="form-field">
+            <label for="id_start_date">Start date:</label>
+            {% if form.start_date.errors %}
+                <div class="alert alert-error">
+                    {{ form.start_date.errors }}
+                </div>
+            {% endif %}
+            {{ form.start_date }}
+            {{ form.start_date_month_known }}
+            {{ form.start_date_day_known }}
+        </div>
+        <div class="form-field">
+            <label for="id_end_date">End date:</label>
+            {% if form.end_date.errors %}
+                <div class="alert alert-error">
+                    {{ form.end_date.errors }}
+                </div>
+            {% endif %}
+            {{ form.end_date }}
+            {{ form.end_date_month_known }}
+            {{ form.end_date_day_known }}
+        </div>
+        <div class="form-field date_type">
+            <label class="radio inline">
+               <input type="radio" name="record_date_type" checked="checked" value="single"> Single date
+            </label>
+            <label class="radio inline">
+               <input type="radio" name="record_date_type" value="range"> Date range
+            </label>
+        </div>
+        <div class="form-field naa">
+            <label for="id_numeric_identifier">Numeric identifier (barcode):</label>
+            {% if form.numeric_identifier.errors %}
+                <div class="alert alert-error">
+                    {{ form.numeric_identifier.errors }}
+                </div>
+            {% endif %}
+            {{ form.numeric_identifier }}
+        </div>
+        {% if resident_name %}
+            <div class="form-field naa">
+                <label for="id_relationship">Relationship:</label>
+                {% if form.relationship.errors %}
+                    <div class="alert alert-error">
+                        {{ form.relationship.errors }}
+                    </div>
+                {% endif %}
+                {{ resident_name }} is {{ form.relationship }}
+            </div>
+        {% endif %}
+        {{ form.resident }}
+        <input class="btn btn-primary" type="submit" value="Add" />
+    </form>
+{% endblock %}

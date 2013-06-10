@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+{% block extrastyle %}
+  {{ block.super }}
+    <style>
+      #changelist table thead th {width: 8em;}
+      .vTextField {width: 8em;}
+    </style>
+{% endblock %}

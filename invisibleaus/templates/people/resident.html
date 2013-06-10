@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Residents -- {% endblock %}
+{% block extra_scripts %}
+{% endblock %}
+{% block extra_styles %}
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row-fluid">
+        <header class="span12">
+            <h1>{{ content.display_name }}</h1>
+        </header>
+        <div class="span12">
+        {% if content.residentrelatedrecord_set %}
+            <h3>Related NAA items</h3>
+            <ul>
+                {% regroup content.naa_items by relationship.label as relationships %}
+                {% for relationship in relationships %}
+                    <li>
+                        {{ relationship.grouper }}
+                        <ul>
+                        {% for item in relationship.list %}
+                            <li>
+                                <div>NAA: {{ item.record.short_citation }}</div>
+                                <div>{{ item.record.title }}</div>
+                                <div>
+                                    Access: {{ item.record.access_status }} |
+                                    Digitised: {{ item.record.number_digitised_pages }} page{{ item.record.number_digitised_pages|pluralize }}
+                                    {% if item.record.number_digitised_pages %}
+                                        | <a href="http://dhistory.org/archives/naa/{{item.record.numeric_identifier }}">View</a>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <div class="span10">
+            <a href="{% url resident-update content.id %}">Edit</a>
+        </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

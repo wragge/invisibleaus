@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Sources -- {% endblock %}
+{% block extra_scripts %}
+{% endblock %}
+{% block extra_styles %}
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row-fluid">
+        <header class="span12">
+            <h1>{{ content.title }}</h1>
+        </header>
+        <div class="span12">
+        {% if content.short_citation %}
+            <p>{{ content.repository }}: {{ content.short_citation }}</p>
+        {% endif %}
+        </div>
+    </div>
+</div>

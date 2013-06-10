@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Add a resident -- {% endblock %}
+{% block extra_scripts %}
+<script src="{{ STATIC_URL }}js/jquery.formset.min.js"></script>
+<script src="{{ STATIC_URL }}js/add-name.js"></script>
+<script>
+$(function(){
+    $('#name_part_form').formset({prefix: '{{ namepart_formset.prefix }}'});
+});
+</script>
+{% endblock %}
+{% block extra_styles %}
+{% endblock %}
+{% block content %}
+    <h1>Update &lsquo;{{ object.display_name }}&rsquo;</h1>
+    <p>An alternative name for <a href="{% url resident-view object.resident.id %}">{{ object.resident }}</a></p>
+    <form action="." method="post" enctype="multipart/form-data">{% csrf_token %}
+        {{ form.non_field_errors }}
+        <fieldset>
+            {{ form.as_p}}
+            {% for namepart in namepart_formset.forms %}
+            <div id="name_part_form">
+                <p>{% if namepart.instance.pk %}{{ namepart.DELETE }}{% endif %}</p>
+                {{ namepart.as_p }}
+            </div>
+            {% endfor %}
+            {{ namepart_formset.management_form }}
+            <input class="btn btn-primary" type="submit" value="Submit" />
+        </fieldset>
+    </form>
+{% endblock %}

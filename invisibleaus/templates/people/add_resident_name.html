@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Add a resident -- {% endblock %}
+{% block extra_scripts %}
+<script src="{{ STATIC_URL }}js/jquery.formset.min.js"></script>
+<script src="{{ STATIC_URL }}js/add-name.js"></script>
+<script>
+$(function(){
+    //$('#name_part_form').formset({prefix: '{{ namepart_formset.prefix }}', addCssClass: 'controls', deleteCssClass: 'controls'});
+});
+</script>
+{% endblock %}
+{% block extra_styles %}
+{% endblock %}
+{% block content %}
+    <h1>Add a name</h1>
+    {% if residentaltname %}
+        <p>Alternative name for <a href="{% url resident-view residentaltname.resident.id %}">{{ residentaltname.resident.display_name }}</a></p>
+    {% else %}
+        <p>Alternative name for <a href="{% url resident-view resident.id %}">{{ resident.display_name }}</a></p>
+    {% endif %}
+    <form action="." method="post" enctype="multipart/form-data" class="form-horizontal">{% csrf_token %}
+        {{ form.non_field_errors }}
+        <fieldset>
+            <legend>Name</legend>
+            {% with label='Display name' field=form.display_name %}
+                {% include '_form_field.html' %}
+            {% endwith %}
+            {% with label='Note' field=form.note %}
+                {% include '_form_field.html' %}
+            {% endwith %}
+            {% with label='Name type' field=form.name_type %}
+                {% include '_form_field.html' %}
+            {% endwith %}
+        </fieldset>
+        <fieldset>
+            <legend>Parts of the name</legend>
+            {% for namepart in namepart_formset.forms %}
+            <div id="name_part_form">
+                {% with label='Name part' field=namepart.part %}
+                    {% include '_form_field.html' %}
+                {% endwith %}
+                {% with label='Name part type' field=namepart.name_part_type %}
+                    {% include '_form_field.html' %}
+                {% endwith %}
+                <div class="controls">
+                    {% if namepart.instance.pk %}{{ namepart.DELETE }}{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {{ namepart_formset.management_form }}
+        </fieldset>
+
+
+        <input class="btn btn-primary" type="submit" value="Submit" />
+    </form>
+{% endblock %}

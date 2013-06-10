@@ -12,7 +12,7 @@ from rdflib import Namespace, BNode, Literal, RDF, URIRef
 from django_conneg.views import ContentNegotiatedView
 from django_conneg.decorators import renderer
 
-from app.linkeddata.models import *
+from invisibleaus.linkeddata.models import *
 
 SCHEMAS = {
             'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
@@ -22,7 +22,6 @@ SCHEMAS = {
             'bio': 'http://purl.org/vocab/bio/0.1/',
             'geo': 'http://www.w3.org/2003/01/geo/wgs84_pos#',
             'rel': 'http://purl.org/vocab/relationship/',
-            'graves': 'http://rdf.muninn-project.org/ontologies/graves#'
             }
 
 

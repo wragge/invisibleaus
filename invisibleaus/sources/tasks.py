@@ -1,9 +1,22 @@
-import csv
+from rstools import client
+from invisibleaus.sources.models import *
+from invisibleaus.people.models import Repository
 
 
-def import_nsw_bdm(csv_filepath):
-    with open(csv_filepath, 'rb') as csv_file:
-        data = csv.reader(csv_file)
-        for row in data:
-            print row[0]
+def harvest_series(series_id):
+    rs = client.RSSeriesClient()
+    details = rs.get_summary(series_id)
+    record_type = RecordType.objects.get(label='series')
+    repository = Repository.objects.get(display_name='National Archives of Australia')
+    series = Series.objects.get_or_create(
+                                identifier=details['identifier'],
+                                record_type=record_type,
+                                repository=repository,
+                                defaults={
+                                    'title': details['title'],
+
+                                }
+                            )
+
+
 

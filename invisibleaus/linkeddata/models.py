@@ -36,6 +36,9 @@ class RDFRelationship(models.Model):
     def __unicode__(self):
         return self.label
 
+    class Meta:
+        abstract = True
+
 
 class RDFType(models.Model):
     '''Generic type.'''
@@ -44,3 +47,6 @@ class RDFType(models.Model):
 
     def __unicode__(self):
         return self.label
+
+    class Meta:
+        abstract = True
