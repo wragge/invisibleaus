@@ -1,10 +1,10 @@
 from django.db import models
 
-from invisibleaus.generic.models import Place
+from invisibleaus.generic.models import Place as GenericPlace
 from invisibleaus.linkeddata.models import RDFRelationship
 
 
-class Place(Place):
+class Place(GenericPlace):
     related_places = models.ManyToManyField('places.Place', blank=True, null=True, through='PlaceRelatedPlace')
 
 
